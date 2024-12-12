@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 import sys
-import openai
 import matplotlib.pyplot as plt
 import seaborn as sns
 
