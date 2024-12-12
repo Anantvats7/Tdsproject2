@@ -1,7 +1,7 @@
 
 import os
 import sys
-
+import httpx
 
 
 
@@ -55,7 +55,7 @@ def query_llm(prompt):
         "messages": [{"role": "user", "content": prompt}]
     }
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = httpx.post(url, headers=headers, json=data)
         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
         
         # Extract the content from the response
