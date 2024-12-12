@@ -1,14 +1,15 @@
-import pandas as pd
+
 import os
 import sys
-import seaborn as sns
-import requests
-import matplotlib.pyplot as plt
+
+
+
 
 url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
 
 def load_data(filename):
+    import pandas as pd
     try:
         data = pd.read_csv(filename, encoding='ISO-8859-1')
         return data
@@ -31,6 +32,7 @@ def analyze_data(data):
 
 
 def query_llm(prompt):
+    import requests
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
@@ -67,6 +69,8 @@ def query_llm(prompt):
 
 
 def visualize_data(data, output_prefix="chart"):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
     # Correlation matrix heatmap
     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
     num_df = data.select_dtypes(include=['number'])
