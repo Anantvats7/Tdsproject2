@@ -27,12 +27,23 @@ def analyze_data(data):
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
         }
+    num_columns = data.select_dtypes(include=[np.number]).columns
+    outliers = {}
+    for column in num_columns:
+        Q1 = data[column].quantile(0.25)
+        Q3 = data[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
+    
+    analysis["outliers"] = outliers
     return analysis
 
 
 
 def query_llm(prompt):
-    import requests
+    #import requests
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
@@ -69,8 +80,8 @@ def query_llm(prompt):
 
 
 def visualize_data(data, output_prefix="chart"):
-    import seaborn as sns
-    import matplotlib.pyplot as plt
+    #import seaborn as sns
+    #import matplotlib.pyplot as plt
     # Correlation matrix heatmap
     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
     num_df = data.select_dtypes(include=['number'])
