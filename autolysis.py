@@ -123,8 +123,8 @@ def generate_story(analysis):
     story = query_llm(prompt)
     with open("README.md", "w") as f:
         f.write(story)
-        # for chart in chart_filenames:
-        #     f.write(f"\n![Chart]({chart})\n")
+        for chart in chart_filenames:
+            f.write(f"\n![Chart]({chart})\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -140,8 +140,8 @@ if __name__ == "__main__":
     chart_files = visualize_data(data)
     
     print("Generating story...")
-    #generate_story(analysis, chart_files)
-    generate_story(analysis)
+    generate_story(analysis, chart_files)
+    #generate_story(analysis)
 
     print("README.md and charts generated successfully.")
 
