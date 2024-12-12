@@ -21,6 +21,7 @@ def load_data(filename):
         sys.exit(1)
 
 def analyze_data(data):
+    import numpy as np
     analysis = {
         "shape": data.shape,
         "columns": data.dtypes.to_dict(),
