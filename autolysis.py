@@ -3,6 +3,7 @@ import os
 import sys
 import seaborn as sns
 import requests
+import matplotlib.pyplot as plt
 
 def load_data(filename):
     try:
