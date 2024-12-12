@@ -5,7 +5,8 @@
 #   "pandas",
 #   "seaborn",
 #   "matplotlib",
-#   "numpy"
+#   "numpy",
+#   "scikit-learn"
 # ]
 # ///
 import os
