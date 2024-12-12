@@ -4,7 +4,8 @@
 #   "httpx",
 #   "pandas",
 #   "seaborn",
-#   "matplotlib"
+#   "matplotlib",
+#   "numpy"
 # ]
 # ///
 import os
@@ -12,12 +13,13 @@ import sys
 import httpx
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+impoet numpy as np
 
 url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
 
 def load_data(filename):
-    import pandas as pd
     try:
         data = pd.read_csv(filename, encoding='ISO-8859-1')
         return data
@@ -29,12 +31,13 @@ def load_data(filename):
         sys.exit(1)
 
 def analyze_data(data):
-    import numpy as np
+    numeric_df = data.select_dtypes(include=['number'])
     analysis = {
         "shape": data.shape,
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
+        'correlation': numeric_df.corr().to_dict() 
         }
     num_columns = data.select_dtypes(include=[np.number]).columns
     outliers = {}
@@ -101,8 +104,7 @@ def visualize_data(data, output_prefix="chart"):
 
     return filename_corr, filename_boxplot, filename_histogram
 
-#def generate_story(analysis, chart_filenames):
-def generate_story(analysis):
+def generate_story(analysis, chart_filenames):
     prompt =  (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -134,14 +136,14 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     data = load_data(filename)
     analysis = analyze_data(data)
-    #print(analysis)
+
     print("Running analysis...")
-    #chart_files = [visualize_data(data)]
+
     chart_files = visualize_data(data)
     
     print("Generating story...")
     generate_story(analysis, chart_files)
-    #generate_story(analysis)
+
 
     print("README.md and charts generated successfully.")
 
