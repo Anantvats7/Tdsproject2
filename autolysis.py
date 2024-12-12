@@ -21,7 +21,8 @@ def analyze_data(data):
         "shape": data.shape,
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
-        "summary_statistics": data.describe().to_dict()
+        "summary_statistics": data.describe().to_dict(),
+        "outliers":{}
     }
     num_columns = data.select_dtypes(include=[np.number]).columns
     outliers = {}
@@ -108,8 +109,8 @@ def visualize_data(data, output_prefix="chart"):
 def generate_story(analysis, chart_filenames):
     prompt = f"""
     The dataset contains the following summary statistics: {analysis}.
-    Here are some visualizations: {chart_filenames}.
-    Write a story about the dataset, its insights,  implications and conclusion.
+    Write a comprehensive and insightful story about the dataset, its key findings, implications, and conclusions.
+    Focus on how the dataset informs potential actions or decisions based on its patterns.
     """
     story = query_llm(prompt)
     with open("README.md", "w") as f:
