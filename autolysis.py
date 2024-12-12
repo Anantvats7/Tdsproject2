@@ -1,9 +1,9 @@
 import pandas as pd
 import os
 import sys
-#import seaborn as sns
+import seaborn as sns
 import requests
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 def load_data(filename):
     try:
@@ -22,7 +22,7 @@ def analyze_data(data):
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
-        "outliers":{}
+        
     }
     num_columns = data.select_dtypes(include=[np.number]).columns
     outliers = {}
@@ -78,39 +78,38 @@ def query_llm(prompt):
 #     return filename
 
 
-# def visualize_data(data, output_prefix="chart"):
-#     # Correlation matrix heatmap
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     num_df = data.select_dtypes(include=['number'])
-#     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
-#     plt.title("Correlation Matrix")
-#     filename_corr = f"{output_prefix}_correlation_matrix.png"
-#     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
-#     plt.close()
+def visualize_data(data, output_prefix="chart"):
+    # Correlation matrix heatmap
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    num_df = data.select_dtypes(include=['number'])
+    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+    plt.title("Correlation Matrix")
+    filename_corr = f"{output_prefix}_correlation_matrix.png"
+    plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
+    plt.close()
 
-#     # Box plot for outlier detection
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     sns.boxplot(data=num_df)
-#     plt.title("Box Plot for Outlier Detection")
-#     filename_boxplot = f"{output_prefix}_boxplot.png"
-#     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
-#     plt.close()
+    # Box plot for outlier detection
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    sns.boxplot(data=num_df)
+    plt.title("Box Plot for Outlier Detection")
+    filename_boxplot = f"{output_prefix}_boxplot.png"
+    plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
+    plt.close()
 
-#     # Histogram with KDE
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     sns.histplot(num_df.iloc[:, 0], kde=True)
-#     plt.title("Histogram with KDE")
-#     filename_histogram = f"{output_prefix}_histogram.png"
-#     plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
-#     plt.close()
+    # Histogram with KDE
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    sns.histplot(num_df.iloc[:, 0], kde=True)
+    plt.title("Histogram with KDE")
+    filename_histogram = f"{output_prefix}_histogram.png"
+    plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
+    plt.close()
 
-#     return filename_corr, filename_boxplot, filename_histogram
+    return filename_corr, filename_boxplot, filename_histogram
 
 def generate_story(analysis, chart_filenames):
     prompt = f"""
     The dataset contains the following summary statistics: {analysis}.
-    Write a comprehensive and insightful story about the dataset, its key findings, implications, and conclusions.
-    Focus on how the dataset informs potential actions or decisions based on its patterns.
+    Write a comprehensive and insightful story about the dataset, its key findings, patterns,implications, and conclusions.
     """
     story = query_llm(prompt)
     with open("README.md", "w") as f:
