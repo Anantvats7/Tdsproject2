@@ -10,8 +10,8 @@
 import os
 import sys
 import httpx
-
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
