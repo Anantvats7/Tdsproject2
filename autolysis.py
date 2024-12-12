@@ -100,7 +100,7 @@ def generate_story(analysis, chart_filenames):
     
     f"**Column Names & Types:** {analysis['columns']}\n\n"
     
-    f"**Summary Statistics:** {analysis['summary']}\n\n"
+    f"**Summary Statistics:** {analysis['summary_statistics']}\n\n"
     
     f"**Missing Values:** {analysis['missing_values']}\n\n"
     
