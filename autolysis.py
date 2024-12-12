@@ -96,7 +96,6 @@ def visualize_data(data, output_prefix="chart"):
 
 def generate_story(analysis, chart_filenames):
     prompt =  (
-    f"You are a data analyst tasked with analyzing the dataset from the file '{file_path.name}'. "
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
     f"**Column Names & Types:** {analysis['columns']}\n\n"
