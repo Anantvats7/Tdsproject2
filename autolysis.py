@@ -1,4 +1,12 @@
-
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "httpx",
+#   "pandas",
+#   "seaborn",
+#   "matplotlib"
+# ]
+# ///
 import os
 import sys
 import httpx
@@ -63,72 +71,35 @@ def query_llm(prompt):
         return "Unexpected response structure received from the server."
 
 
-# def query_llm(prompt):
-#     import requests
-#     headers = {
-#         'Authorization': f'Bearer {AIPROXY_TOKEN}',
-#         'Content-Type': 'application/json'
-#         }
-#     #prompt = f"Provide a detailed analysis based on the following data summary: {analysis}"
-#     data = {
-#         "model": "gpt-4o-mini",
-#         "messages": [{"role": "user", "content": prompt}]
-#     }
-#     try:
-#         response = requests.post(url, headers=headers, json=data)
-#         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
-        
-#         # Extract the content from the response
-#         content = response.json().get("choices", [])[0].get("message", {}).get("content", "")
-#         return content if content else "No content received from the model."
-    
-#     except requests.exceptions.RequestException as e:
-#         # Handle any request-related exceptions
-#         return f"Request failed: {str(e)}"
-#     except (KeyError, IndexError):
-#         # Handle unexpected JSON structure
-#         return "Unexpected response structure received from the server."
+def visualize_data(data, output_prefix="chart"):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    # Correlation matrix heatmap
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    num_df = data.select_dtypes(include=['number'])
+    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+    plt.title("Correlation Matrix")
+    filename_corr = f"{output_prefix}_correlation_matrix.png"
+    plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
+    plt.close()
 
-# def visualize_data(data, output_prefix="chart"):
-#     plt.figure(figsize=(8, 6))
-#     num_df = data.select_dtypes(include=['number']) 
-#     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
-#     plt.title("Correlation Matrix")
-#     filename = f"{output_prefix}_correlation_matrix.png"
-#     plt.savefig(filename)
-#     plt.close()
-#     return filename
+    # Box plot for outlier detection
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    sns.boxplot(data=num_df)
+    plt.title("Box Plot for Outlier Detection")
+    filename_boxplot = f"{output_prefix}_boxplot.png"
+    plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
+    plt.close()
 
+    # Histogram with KDE
+    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+    sns.histplot(num_df.iloc[:, 0], kde=True)
+    plt.title("Histogram with KDE")
+    filename_histogram = f"{output_prefix}_histogram.png"
+    plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
+    plt.close()
 
-# def visualize_data(data, output_prefix="chart"):
-#     #import seaborn as sns
-#     #import matplotlib.pyplot as plt
-#     # Correlation matrix heatmap
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     num_df = data.select_dtypes(include=['number'])
-#     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
-#     plt.title("Correlation Matrix")
-#     filename_corr = f"{output_prefix}_correlation_matrix.png"
-#     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
-#     plt.close()
-
-#     # Box plot for outlier detection
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     sns.boxplot(data=num_df)
-#     plt.title("Box Plot for Outlier Detection")
-#     filename_boxplot = f"{output_prefix}_boxplot.png"
-#     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
-#     plt.close()
-
-#     # Histogram with KDE
-#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-#     sns.histplot(num_df.iloc[:, 0], kde=True)
-#     plt.title("Histogram with KDE")
-#     filename_histogram = f"{output_prefix}_histogram.png"
-#     plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
-#     plt.close()
-
-#     return filename_corr, filename_boxplot, filename_histogram
+    return filename_corr, filename_boxplot, filename_histogram
 
 #def generate_story(analysis, chart_filenames):
 def generate_story(analysis):
@@ -166,7 +137,7 @@ if __name__ == "__main__":
     #print(analysis)
     print("Running analysis...")
     #chart_files = [visualize_data(data)]
-    #chart_files = visualize_data(data)
+    chart_files = visualize_data(data)
     
     print("Generating story...")
     #generate_story(analysis, chart_files)
