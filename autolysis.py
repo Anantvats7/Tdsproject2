@@ -5,6 +5,9 @@ import seaborn as sns
 import requests
 import matplotlib.pyplot as plt
 
+url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
+
 def load_data(filename):
     try:
         data = pd.read_csv(filename, encoding='ISO-8859-1')
@@ -22,25 +25,10 @@ def analyze_data(data):
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
-        
-    }
-    num_columns = data.select_dtypes(include=[np.number]).columns
-    outliers = {}
-    for column in num_columns:
-        Q1 = data[column].quantile(0.25)
-        Q3 = data[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
-    
-    analysis["outliers"] = outliers
+        }
     return analysis
 
 
-url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
-
-AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
 
 def query_llm(prompt):
     headers = {
@@ -107,10 +95,24 @@ def visualize_data(data, output_prefix="chart"):
     return filename_corr, filename_boxplot, filename_histogram
 
 def generate_story(analysis, chart_filenames):
-    prompt = f"""
-    The dataset contains the following summary statistics: {analysis}.
-    Write a comprehensive and insightful story about the dataset, its key findings, patterns,implications, and conclusions.
-    """
+    prompt =  (
+    f"You are a data analyst tasked with analyzing the dataset from the file '{file_path.name}'. "
+    f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
+    
+    f"**Column Names & Types:** {analysis['columns']}\n\n"
+    
+    f"**Summary Statistics:** {analysis['summary']}\n\n"
+    
+    f"**Missing Values:** {analysis['missing_values']}\n\n"
+    
+    "In your analysis, please focus on the following:\n"
+    "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
+    "- Discuss any **outliers** or **anomalies** that stand out, especially those that might need further investigation."
+    "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
+    "- Highlight any **correlations** that might provide actionable insights, especially with respect to the success or failure of the campaign.\n"
+    "- Based on your findings, suggest **additional analyses** that could uncover further insights, such as clustering to identify customer segments or anomaly detection for identifying unusual patterns.\n"
+    "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover."
+    )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
         f.write(story)
