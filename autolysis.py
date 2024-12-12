@@ -1,76 +1,92 @@
+import pandas as pd
 import os
 import sys
-import pandas as pd
-import seaborn as sns
+import openai
 import matplotlib.pyplot as plt
-import httpx
-import chardet
+import seaborn as sns
 
-# Constants
-API_URL = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
-AIPROXY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjIzZjIwMDU1OTdAZHMuc3R1ZHkuaWl0bS5hYy5pbiJ9.mGtFocaNamOEpoh3Y6WUB-xoAJJzW3EQntzLwbHUSXg"
+def load_data(filename):
+    try:
+        data = pd.read_csv(filename)
+        return data
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        sys.exit(1)
 
-def load_data(file_path):
-    """Load CSV data with encoding detection."""
-    with open(file_path, 'rb') as f:
-        result = chardet.detect(f.read())
-    encoding = result['encoding']
-    return pd.read_csv(file_path, encoding=encoding)
-
-def analyze_data(df):
-    """Perform basic data analysis."""
-    numeric_df = df.select_dtypes(include=['number'])  # Select only numeric columns
+def analyze_data(data):
     analysis = {
-        'summary': df.describe(include='all').to_dict(),
-        'missing_values': df.isnull().sum().to_dict(),
-        'correlation': numeric_df.corr().to_dict()  # Compute correlation only on numeric columns
+        "shape": data.shape,
+        "columns": data.dtypes.to_dict(),
+        "missing_values": data.isnull().sum().to_dict(),
+        "summary_statistics": data.describe().to_dict()
     }
     return analysis
 
-def visualize_data(df):
-    """Generate and save visualizations."""
-    sns.set(style="whitegrid")
-    numeric_columns = df.select_dtypes(include=['number']).columns
-    for column in numeric_columns:
-        plt.figure()
-        sns.histplot(df[column].dropna(), kde=True)
-        plt.title(f'Distribution of {column}')
-        plt.savefig(f'{column}_distribution.png')
-        plt.close()
+import requests
+url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 
-def generate_narrative(analysis):
-    """Generate narrative using LLM."""
+AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
+def query_llm(prompt):
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
-    }
-    prompt = f"Provide a detailed analysis based on the following data summary: {analysis}"
+        }
+    #prompt = f"Provide a detailed analysis based on the following data summary: {analysis}"
     data = {
         "model": "gpt-4o-mini",
         "messages": [{"role": "user", "content": prompt}]
     }
     try:
-        response = httpx.post(API_URL, headers=headers, json=data, timeout=30.0)
-        response.raise_for_status()
-        return response.json()['choices'][0]['message']['content']
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP error occurred: {e}")
-    except httpx.RequestError as e:
-        print(f"Request error occurred: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    return "Narrative generation failed due to an error."
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        
+        # Extract the content from the response
+        content = response.json().get("choices", [])[0].get("message", {}).get("content", "")
+        return content if content else "No content received from the model."
+    
+    except requests.exceptions.RequestException as e:
+        # Handle any request-related exceptions
+        return f"Request failed: {str(e)}"
+    except (KeyError, IndexError):
+        # Handle unexpected JSON structure
+        return "Unexpected response structure received from the server."
 
-def main(file_path):
-    df = load_data(file_path)
-    analysis = analyze_data(df)
-    visualize_data(df)
-    narrative = generate_narrative(analysis)
-    with open('README.md', 'w') as f:
-        f.write(narrative)
+def visualize_data(data, output_prefix="chart"):
+    plt.figure(figsize=(8, 6))
+    num_df = data.select_dtypes(include=['number']) 
+    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+    plt.title("Correlation Matrix")
+    filename = f"{output_prefix}_correlation_matrix.png"
+    plt.savefig(filename)
+    plt.close()
+    return filename
+
+def generate_story(analysis, chart_filenames):
+    prompt = f"""
+    The dataset contains the following summary statistics: {analysis}.
+    Here are some visualizations: {chart_filenames}.
+    Write a story about the dataset, its insights,  implications and conclusion.
+    """
+    story = query_llm(prompt)
+    with open("README.md", "w") as f:
+        f.write(story)
+        for chart in chart_filenames:
+            f.write(f"\n![Chart]({chart})\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python autolysis.py <dataset.csv>")
         sys.exit(1)
-    main(sys.argv[1])
+
+    filename = sys.argv[1]
+    data = load_data(filename)
+    analysis = analyze_data(data)
+    #print(analysis)
+    print("Running analysis...")
+    chart_files = [visualize_data(data)]
+
+    print("Generating story...")
+    generate_story(analysis, chart_files)
+
+    print("README.md and charts generated successfully.")
+
