@@ -145,7 +145,7 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, advanced_results, dynamic_results, agentic_results,chart_filenames):
+def generate_story(analysis, advanced_results, chart_filenames):
     prompt = (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
