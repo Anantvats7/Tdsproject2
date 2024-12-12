@@ -13,12 +13,12 @@ def load_data(filename):
     try:
         data = pd.read_csv(filename, encoding='ISO-8859-1')
         return data
-    except Exception as e:
-        print(f"Error loading file: {e}")
-        sys.exit(1)
     except UnicodeDecodeError:
-        print(f"Error loading file: Unable to decode the file with 'ISO-8859-1'.")
-        sys.exit(1)
+    print("Error loading file: Unable to decode the file with 'ISO-8859-1'.")
+    sys.exit(1)
+except Exception as e:
+    print(f"Error loading file: {e}")
+    sys.exit(1)
 
 def analyze_data(data):
     import numpy as np
@@ -41,33 +41,53 @@ def analyze_data(data):
     analysis["outliers"] = outliers
     return analysis
 
-
-
 def query_llm(prompt):
-    #import requests
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
-        }
-    #prompt = f"Provide a detailed analysis based on the following data summary: {analysis}"
+    }
     data = {
         "model": "gpt-4o-mini",
         "messages": [{"role": "user", "content": prompt}]
     }
     try:
-        response = httpx.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
-        
-        # Extract the content from the response
+        response = httpx.post(url, headers=headers, json=data, timeout=30)  # Increased timeout
+        response.raise_for_status()
         content = response.json().get("choices", [])[0].get("message", {}).get("content", "")
         return content if content else "No content received from the model."
-    
-    except requests.exceptions.RequestException as e:
-        # Handle any request-related exceptions
+    except httpx.TimeoutException as e:
+        return f"Request timed out: {str(e)}"
+    except httpx.RequestError as e:
         return f"Request failed: {str(e)}"
     except (KeyError, IndexError):
-        # Handle unexpected JSON structure
         return "Unexpected response structure received from the server."
+
+
+# def query_llm(prompt):
+#     import requests
+#     headers = {
+#         'Authorization': f'Bearer {AIPROXY_TOKEN}',
+#         'Content-Type': 'application/json'
+#         }
+#     #prompt = f"Provide a detailed analysis based on the following data summary: {analysis}"
+#     data = {
+#         "model": "gpt-4o-mini",
+#         "messages": [{"role": "user", "content": prompt}]
+#     }
+#     try:
+#         response = requests.post(url, headers=headers, json=data)
+#         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        
+#         # Extract the content from the response
+#         content = response.json().get("choices", [])[0].get("message", {}).get("content", "")
+#         return content if content else "No content received from the model."
+    
+#     except requests.exceptions.RequestException as e:
+#         # Handle any request-related exceptions
+#         return f"Request failed: {str(e)}"
+#     except (KeyError, IndexError):
+#         # Handle unexpected JSON structure
+#         return "Unexpected response structure received from the server."
 
 # def visualize_data(data, output_prefix="chart"):
 #     plt.figure(figsize=(8, 6))
