@@ -68,7 +68,7 @@ def advanced_analysis(data):
     """
 
     # Impute missing values before clustering
-    imputer = SimpleImputer(strategy='mean')  # Use 'mean' to impute missing values
+    imputer = SimpleImputer(strategy='most_frequent')  
     data_imputed = imputer.fit_transform(data.select_dtypes(include=['number']))
     data_imputed = pd.DataFrame(data_imputed, columns=data.select_dtypes(include=['number']).columns)
     
@@ -97,34 +97,7 @@ def advanced_analysis(data):
 
 
 
-def dynamic_analysis(data):
-    """
-    Dynamic analysis for detecting trends or time-based patterns
-    """
-    if 'date' in data.columns:
-        data['date'] = pd.to_datetime(data['date'])
-        data.set_index('date', inplace=True)
-        daily_trends = data.resample('D').mean()  # Resample by day and take the mean for each day
-        
-        return {
-            "Daily Trends": daily_trends
-        }
-    else:
-        return {"Error": "No date column for dynamic analysis."}
 
-def agentic_workflows(data):
-    """
-    Automated workflows such as alerting for anomalies or generating reports
-    """
-    anomalies = data[data.isnull().any(axis=1)]  # Detect rows with missing values
-    
-    # If there are anomalies, automate a report generation
-    if not anomalies.empty:
-        return {
-            "Anomalies Detected": anomalies
-        }
-    else:
-        return {"Status": "No anomalies detected, all data is clean."}
 
 def visualize_data(data, output_prefix="chart"):
     plt.figure(figsize=(10, 10))
@@ -186,10 +159,6 @@ def generate_story(analysis, advanced_results, dynamic_results, agentic_results,
     
     f"**Advanced Analysis Results:** {advanced_results}\n\n"
     
-    f"**Dynamic Analysis Results (Trends):** {dynamic_results}\n\n"
-    
-    f"**Agentic Workflows (Automation):** {agentic_results}\n\n"
-
     f"**Visulation ** {chart_filenames}\n\n"
     
     "In your analysis, please focus on the following:\n"
@@ -217,13 +186,11 @@ if __name__ == "__main__":
     
     print("Running analysis...")
     advanced_results = advanced_analysis(data)
-    dynamic_results = dynamic_analysis(data)
-    agentic_results = agentic_workflows(data)
 
     chart_files = visualize_data(data)
     
     print("Generating story...")
-    generate_story(analysis, advanced_results, dynamic_results, agentic_results,chart_files)
+    generate_story(analysis, advanced_results, chart_files)
 
     print("README.md and charts generated successfully.")
 
