@@ -14,11 +14,11 @@ def load_data(filename):
         data = pd.read_csv(filename, encoding='ISO-8859-1')
         return data
     except UnicodeDecodeError:
-    print("Error loading file: Unable to decode the file with 'ISO-8859-1'.")
-    sys.exit(1)
-except Exception as e:
-    print(f"Error loading file: {e}")
-    sys.exit(1)
+        print("Error loading file: Unable to decode the file with 'ISO-8859-1'.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        sys.exit(1)
 
 def analyze_data(data):
     import numpy as np
