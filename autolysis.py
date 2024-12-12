@@ -80,37 +80,38 @@ def query_llm(prompt):
 #     return filename
 
 
-def visualize_data(data, output_prefix="chart"):
-    #import seaborn as sns
-    #import matplotlib.pyplot as plt
-    # Correlation matrix heatmap
-    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-    num_df = data.select_dtypes(include=['number'])
-    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
-    plt.title("Correlation Matrix")
-    filename_corr = f"{output_prefix}_correlation_matrix.png"
-    plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
-    plt.close()
+# def visualize_data(data, output_prefix="chart"):
+#     #import seaborn as sns
+#     #import matplotlib.pyplot as plt
+#     # Correlation matrix heatmap
+#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+#     num_df = data.select_dtypes(include=['number'])
+#     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+#     plt.title("Correlation Matrix")
+#     filename_corr = f"{output_prefix}_correlation_matrix.png"
+#     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")  
+#     plt.close()
 
-    # Box plot for outlier detection
-    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-    sns.boxplot(data=num_df)
-    plt.title("Box Plot for Outlier Detection")
-    filename_boxplot = f"{output_prefix}_boxplot.png"
-    plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
-    plt.close()
+#     # Box plot for outlier detection
+#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+#     sns.boxplot(data=num_df)
+#     plt.title("Box Plot for Outlier Detection")
+#     filename_boxplot = f"{output_prefix}_boxplot.png"
+#     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")  
+#     plt.close()
 
-    # Histogram with KDE
-    plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
-    sns.histplot(num_df.iloc[:, 0], kde=True)
-    plt.title("Histogram with KDE")
-    filename_histogram = f"{output_prefix}_histogram.png"
-    plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
-    plt.close()
+#     # Histogram with KDE
+#     plt.figure(figsize=(10, 10))  # Set figsize when creating the figure
+#     sns.histplot(num_df.iloc[:, 0], kde=True)
+#     plt.title("Histogram with KDE")
+#     filename_histogram = f"{output_prefix}_histogram.png"
+#     plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")  
+#     plt.close()
 
-    return filename_corr, filename_boxplot, filename_histogram
+#     return filename_corr, filename_boxplot, filename_histogram
 
-def generate_story(analysis, chart_filenames):
+#def generate_story(analysis, chart_filenames):
+def generate_story(analysis):
     prompt =  (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -131,8 +132,8 @@ def generate_story(analysis, chart_filenames):
     story = query_llm(prompt)
     with open("README.md", "w") as f:
         f.write(story)
-        for chart in chart_filenames:
-            f.write(f"\n![Chart]({chart})\n")
+        # for chart in chart_filenames:
+        #     f.write(f"\n![Chart]({chart})\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -145,10 +146,11 @@ if __name__ == "__main__":
     #print(analysis)
     print("Running analysis...")
     #chart_files = [visualize_data(data)]
-    chart_files = visualize_data(data)
+    #chart_files = visualize_data(data)
     
     print("Generating story...")
-    generate_story(analysis, chart_files)
+    #generate_story(analysis, chart_files)
+    generate_story(analysis)
 
     print("README.md and charts generated successfully.")
 
