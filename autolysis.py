@@ -7,7 +7,7 @@
 #   "matplotlib",
 #   "numpy",
 #   "scikit-learn",
-#   
+#   "ipykernel"
 # ]
 # ///
 
@@ -15,6 +15,8 @@ import os
 import sys
 import httpx
 import seaborn as sns
+import matplotlib
+matplotlib.use('Agg')  # Switch to a non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
