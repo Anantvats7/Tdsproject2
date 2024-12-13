@@ -7,7 +7,7 @@
 #   "matplotlib",
 #   "numpy",
 #   "scikit-learn",
-#   "easyocr",
+#   "easyocr-1.7.2",
 # ]
 # ///
 
