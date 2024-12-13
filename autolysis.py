@@ -64,8 +64,6 @@ def detect_anomalies(data):
     numeric_data=data.select_dtypes(include=[np.number])
     anomalies = iso_forest.fit_predict(numeric_data)
     anomalies_score=iso_forest.decision_function(numeric_data)
-
-    #return anomaly_filename, anomalies,anomalies_score
     return anomalies,anomalies_score
 
 
