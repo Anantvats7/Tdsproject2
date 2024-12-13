@@ -62,13 +62,6 @@ def detect_anomalies(data):
     numeric_data=data.select_dtypes(include=[np.number])
     anomalies = iso_forest.fit_predict(numeric_data)
     anomalies_score=iso_forest.decision_function(numeric_data)
-    # Visualize Anomalies
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=data.iloc[:, 0], y=data.iloc[:, 1], hue=anomalies, palette="coolwarm", alpha=0.7)
-    plt.title("Anomaly Detection using Isolation Forest")
-    anomaly_filename = "anomaly_detection.png"
-    plt.savefig(anomaly_filename)
-    plt.close()
 
     #return anomaly_filename, anomalies,anomalies_score
     return anomalies,anomalies_score
