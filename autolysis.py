@@ -7,7 +7,7 @@
 #   "matplotlib",
 #   "numpy",
 #   "scikit-learn",
-#   "easyocr-1.7.2",
+#   
 # ]
 # ///
 
@@ -60,21 +60,22 @@ def analyze_data(data):
     analysis["outliers"] = outliers
     return analysis
 
+def detect_anomalies(data):
+    # Apply Isolation Forest for anomaly detection
+    iso_forest = IsolationForest(contamination=0.05)
+    numeric_data=data.select_dtypes(include=[np.number])
+    anomalies = iso_forest.fit_predict(numeric_data)
+    anomalies_score=iso_forest.decision_function(numeric_data)
+    # Visualize Anomalies
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x=data.iloc[:, 0], y=data.iloc[:, 1], hue=anomalies, palette="coolwarm", alpha=0.7)
+    plt.title("Anomaly Detection using Isolation Forest")
+    anomaly_filename = "anomaly_detection.png"
+    plt.savefig(anomaly_filename)
+    plt.close()
 
-
-
-def perform_ocr_easyocr(image_path):
-    extracted_texts = []
-    reader = easyocr.Reader(['en'])
-    try:
-      for image_path in image_paths:
-          result = reader.readtext(image_path, detail=0)
-          extracted_texts.append(result)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    
-    return extracted_texts
-
+    #return anomaly_filename, anomalies,anomalies_score
+    return anomalies,anomalies_score
 
 
 def visualize_data(data, output_prefix="chart"):
@@ -123,7 +124,7 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, chart_filenames,text):
+def generate_story(analysis, chart_filenames,anomalies):
     prompt = (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -135,11 +136,11 @@ def generate_story(analysis, chart_filenames,text):
     
     f"**Outliers and Anomalies:** {analysis['outliers']}\n\n"
     
-    f"**Advanced Analysis Results:** {advanced_results}\n\n"
+    f"**Correlation Analysis Results:** {analysis['correlation']}\n\n"
     
     f"**Visulation ** {chart_filenames}\n\n"
 
-    f"**OCR ** {text}\n\n"
+    f"**anomalies** {anomalies}\n\n"
     
     "In your analysis, please focus on the following:\n"
     "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
@@ -165,15 +166,13 @@ if __name__ == "__main__":
     analysis = analyze_data(data)
     
     print("Running analysis...")
-    #advanced_results = advanced_analysis(data)
+    anomalies = detect_anomalies(data)
 
     chart_files = visualize_data(data)
 
-    image_paths = chart_files # Replace with your image paths
-    texts = perform_ocr_easyocr(image_paths)
     
     print("Generating story...")
-    generate_story(analysis,  chart_files,text)
+    generate_story(analysis,  chart_files,anomalies)
 
     print("README.md and charts generated successfully.")
 
