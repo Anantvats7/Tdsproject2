@@ -6,7 +6,8 @@
 #   "seaborn",
 #   "matplotlib",
 #   "numpy",
-#   "scikit-learn"
+#   "scikit-learn",
+#   "easyocr",
 # ]
 # ///
 
@@ -62,40 +63,17 @@ def analyze_data(data):
 
 
 
-def advanced_analysis(data):
-    """
-    Advanced analysis methods such as clustering and regression
-    """
-
-    # Impute missing values before clustering
-    imputer = SimpleImputer(strategy='most_frequent')  
-    data_imputed = imputer.fit_transform(data.select_dtypes(include=['number']))
-    data_imputed = pd.DataFrame(data_imputed, columns=data.select_dtypes(include=['number']).columns)
+def perform_ocr_easyocr(image_path):
+    extracted_texts = []
+    reader = easyocr.Reader(['en'])
+    try:
+      for image_path in image_paths:
+          result = reader.readtext(image_path, detail=0)
+          extracted_texts.append(result)
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
-    # Clustering (KMeans)
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    data_imputed['Cluster'] = kmeans.fit_predict(data_imputed)
-    
-    # Regression Analysis
-    # For simplicity, we'll predict a target variable (assuming 'target' exists in data)
-    if 'target' in data.columns:
-        X = data.drop(columns=['target'])
-        y = data['target']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        mse = mean_squared_error(y_test, y_pred)
-        
-        return {
-            "Clustering": data_imputed['Cluster'].value_counts().to_dict(),
-            "Regression_MSE": mse
-        }
-    else:
-        return {"Clustering": data_imputed['Cluster'].value_counts().to_dict()}
-
-
+    return extracted_texts
 
 
 
@@ -145,7 +123,7 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, advanced_results, chart_filenames):
+def generate_story(analysis, chart_filenames,text):
     prompt = (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -160,6 +138,8 @@ def generate_story(analysis, advanced_results, chart_filenames):
     f"**Advanced Analysis Results:** {advanced_results}\n\n"
     
     f"**Visulation ** {chart_filenames}\n\n"
+
+    f"**OCR ** {text}\n\n"
     
     "In your analysis, please focus on the following:\n"
     "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
@@ -167,7 +147,7 @@ def generate_story(analysis, advanced_results, chart_filenames):
     "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
     "- Highlight any **correlations** that might provide actionable insights, especially with respect to the success or failure of the campaign.\n"
     
-    "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover."
+    "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover. and provide **conclusion**"
     )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
@@ -185,12 +165,15 @@ if __name__ == "__main__":
     analysis = analyze_data(data)
     
     print("Running analysis...")
-    advanced_results = advanced_analysis(data)
+    #advanced_results = advanced_analysis(data)
 
     chart_files = visualize_data(data)
+
+    image_paths = chart_files # Replace with your image paths
+    texts = perform_ocr_easyocr(image_paths)
     
     print("Generating story...")
-    generate_story(analysis, advanced_results, chart_files)
+    generate_story(analysis,  chart_files,text)
 
     print("README.md and charts generated successfully.")
 
@@ -323,5 +306,5 @@ if __name__ == "__main__":
 #     generate_story(analysis, chart_files)
 
 
-    print("README.md and charts generated successfully.")
+    # print("README.md and charts generated successfully.")
 
