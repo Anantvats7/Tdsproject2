@@ -83,7 +83,7 @@ def detect_anomalies(data):
 
 def visualize_data(data, output_prefix="chart"):
     """Generate visualizations for data analysis."""
-    
+    chart_files = []
      # Correlation Heatmap
     plt.figure(figsize=(5, 5))
     num_df = data.select_dtypes(include=['number'])
@@ -94,6 +94,7 @@ def visualize_data(data, output_prefix="chart"):
     filename_corr = f"{output_prefix}_correlation_matrix.png"
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
+    chart_files.append(filename_corr)
 
     # Box Plot
     plt.figure(figsize=(5, 5))
@@ -104,6 +105,7 @@ def visualize_data(data, output_prefix="chart"):
     filename_boxplot = f"{output_prefix}_boxplot.png"
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
+    chart_files.append(filename_boxplot)
 
     # Histogram with KDE
     for col in num_df.columns[:2]:  # Limit to first 2 columns for visualization
@@ -117,7 +119,7 @@ def visualize_data(data, output_prefix="chart"):
             plt.close()
             chart_files.append(filename_histogram)
 
-    return filename_corr, filename_boxplot, filename_histogram
+    return chart_files
 
 # # Function to encode the image
 # def encode_image(image_path):
