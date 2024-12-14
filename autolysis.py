@@ -170,7 +170,7 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, chart_filenames,anomalies,image_data):
+def generate_story(analysis, chart_filenames,anomalies):
     prompt = (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -184,7 +184,7 @@ def generate_story(analysis, chart_filenames,anomalies,image_data):
     
     f"**Correlation Analysis Results:** {analysis['correlation']}\n\n"
     
-    f"**Visulation text** {image_data}\n\n"
+    f"**Visulation text** {chart_filenames}\n\n"
 
     f"**anomalies** {anomalies}\n\n"
     
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     #image_data=query_image_llm(base64_image)
     
     print("Generating story...")
-    generate_story(analysis,  chart_files,anomalies,image_data)
+    generate_story(analysis,  chart_files,anomalies)
 
     print("README.md and charts generated successfully.")
 
