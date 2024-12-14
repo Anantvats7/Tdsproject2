@@ -81,7 +81,7 @@ def detect_anomalies(data):
 
 def visualize_data(data, output_prefix="chart"):
     """Generate visualizations for data analysis."""
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(5, 5))
     num_df = data.select_dtypes(include=['number'])
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
     plt.title("Correlation Matrix")
@@ -89,14 +89,14 @@ def visualize_data(data, output_prefix="chart"):
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(5, 5))
     sns.boxplot(data=num_df)
     plt.title("Box Plot for Outlier Detection")
     filename_boxplot = f"{output_prefix}_boxplot.png"
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(5, 5))
     sns.histplot(num_df.iloc[:, 0], kde=True)
     plt.title("Histogram with KDE")
     filename_histogram = f"{output_prefix}_histogram.png"
