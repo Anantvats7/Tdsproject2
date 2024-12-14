@@ -9,7 +9,6 @@
 #   "scikit-learn",
 #   "ipykernel",
 #   "requests",
-#   "base64",
 # ]
 # ///
 
