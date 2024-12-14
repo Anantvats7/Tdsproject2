@@ -7,7 +7,9 @@
 #   "matplotlib",
 #   "numpy",
 #   "scikit-learn",
-#   "ipykernel"
+#   "ipykernel",
+#   "requests",
+#   "base64",
 # ]
 # ///
 
@@ -20,12 +22,15 @@ matplotlib.use('Agg')  # Switch to a non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import requests
+import base64
 from sklearn.ensemble import IsolationForest
 
 url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
 
 def load_data(filename):
+    """Load CSV data from a file."""
     try:
         data = pd.read_csv(filename, encoding='ISO-8859-1')
         return data
@@ -36,7 +41,20 @@ def load_data(filename):
         print(f"Error loading file: {e}")
         sys.exit(1)
 
+def detect_outliers(data):
+    """Detect outliers using the IQR method."""
+    outliers = {}
+    for column in data.select_dtypes(include=[np.number]).columns:
+        Q1 = data[column].quantile(0.25)
+        Q3 = data[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
+    return outliers
+
 def analyze_data(data):
+    """Perform basic data analysis."""
     numeric_df = data.select_dtypes(include=['number'])
     analysis = {
         "shape": data.shape,
@@ -45,29 +63,25 @@ def analyze_data(data):
         "summary_statistics": data.describe().to_dict(),
         'correlation': numeric_df.corr().to_dict(), 
     }
-    num_columns = data.select_dtypes(include=[np.number]).columns
-    outliers = {}
-    for column in num_columns:
-        Q1 = data[column].quantile(0.25)
-        Q3 = data[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
-    
-    analysis["outliers"] = outliers
+    analysis["outliers"] = detect_outliers(data)
     return analysis
+    
+
 
 def detect_anomalies(data):
-    # Apply Isolation Forest for anomaly detection
+    """Apply Isolation Forest for anomaly detection."""
+    numeric_data = data.select_dtypes(include=[np.number])
+    if numeric_data.empty:
+        return None, None
+
     iso_forest = IsolationForest(contamination=0.05)
-    numeric_data=data.select_dtypes(include=[np.number])
     anomalies = iso_forest.fit_predict(numeric_data)
     anomalies_score=iso_forest.decision_function(numeric_data)
     return anomalies,anomalies_score
 
 
 def visualize_data(data, output_prefix="chart"):
+    """Generate visualizations for data analysis."""
     plt.figure(figsize=(10, 10))
     num_df = data.select_dtypes(include=['number'])
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
@@ -92,6 +106,54 @@ def visualize_data(data, output_prefix="chart"):
 
     return filename_corr, filename_boxplot, filename_histogram
 
+# Function to encode the image
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Path to your image
+image_path = "chart_boxplot.png"
+
+# Getting the base64 string
+base64_image = encode_image(image_path)
+
+def query_image_llm(base64_image):
+    headers = {
+        'Authorization': f'Bearer {AIPROXY_TOKEN}',
+        'Content-Type': 'application/json'
+        }
+    data = {
+        "model": "gpt-4o-mini",
+       # "messages": [{"role": "user", "content": prompt}]
+        "messages":[
+                        {
+                        "role": "user",
+                        "content": [
+                            {
+                            "type": "text",
+                            "text": "What do you understand with  this image?",
+                            },
+                            {
+                            "type": "image_url",
+                            "image_url": {
+                                "url":  f"data:image/jpeg;base64,{base64_image}",
+                                "detail": "low"
+                            },
+                            },
+                        ],
+                        }
+                    ],
+    }
+    response = requests.post(url, headers=headers, json=data)
+    #print(response.json())
+    if response.status_code == 200:
+    #suggestions = response.json().get("choices", [])[0].get("text", "")
+        suggestions = response.json().get("choices", [])[0].get("message", {}).get("content", "")
+        print("Suggestions:\n", suggestions)
+    else:
+        print("Error:", response.text)
+    return response.json()['choices'][0]['message']['content']
+
 def query_llm(prompt):
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
@@ -113,7 +175,7 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, chart_filenames,anomalies):
+def generate_story(analysis, chart_filenames,anomalies,image_data):
     prompt = (
     f"Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
@@ -127,7 +189,7 @@ def generate_story(analysis, chart_filenames,anomalies):
     
     f"**Correlation Analysis Results:** {analysis['correlation']}\n\n"
     
-    f"**Visulation ** {chart_filenames}\n\n"
+    f"**Visulation text** {image_data}\n\n"
 
     f"**anomalies** {anomalies}\n\n"
     
@@ -158,10 +220,10 @@ if __name__ == "__main__":
     anomalies = detect_anomalies(data)
 
     chart_files = visualize_data(data)
-
+    image_data=query_image_llm(base64_image)
     
     print("Generating story...")
-    generate_story(analysis,  chart_files,anomalies)
+    generate_story(analysis,  chart_files,anomalies,image_data)
 
     print("README.md and charts generated successfully.")
 
