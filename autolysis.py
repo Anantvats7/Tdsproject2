@@ -111,43 +111,43 @@ def encode_image(image_path):
     return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-
-def query_image_llm(base64_image):
-    headers = {
-        'Authorization': f'Bearer {AIPROXY_TOKEN}',
-        'Content-Type': 'application/json'
-        }
-    data = {
-        "model": "gpt-4o-mini",
-       # "messages": [{"role": "user", "content": prompt}]
-        "messages":[
-                        {
-                        "role": "user",
-                        "content": [
-                            {
-                            "type": "text",
-                            "text": "What do you understand with  this image?",
-                            },
-                            {
-                            "type": "image_url",
-                            "image_url": {
-                                "url":  f"data:image/jpeg;base64,{base64_image}",
-                                "detail": "low"
-                            },
-                            },
-                        ],
-                        }
-                    ],
-    }
-    response = requests.post(url, headers=headers, json=data)
-    #print(response.json())
-    if response.status_code == 200:
-    #suggestions = response.json().get("choices", [])[0].get("text", "")
-        suggestions = response.json().get("choices", [])[0].get("message", {}).get("content", "")
-        #print("Suggestions:\n", suggestions)
-    else:
-        print("Error:", response.text)
-    return response.json()['choices'][0]['message']['content']
+#vision is taking to much time
+# def query_image_llm(base64_image):
+#     headers = {
+#         'Authorization': f'Bearer {AIPROXY_TOKEN}',
+#         'Content-Type': 'application/json'
+#         }
+#     data = {
+#         "model": "gpt-4o-mini",
+#        # "messages": [{"role": "user", "content": prompt}]
+#         "messages":[
+#                         {
+#                         "role": "user",
+#                         "content": [
+#                             {
+#                             "type": "text",
+#                             "text": "What do you understand with  this image?",
+#                             },
+#                             {
+#                             "type": "image_url",
+#                             "image_url": {
+#                                 "url":  f"data:image/jpeg;base64,{base64_image}",
+#                                 "detail": "low"
+#                             },
+#                             },
+#                         ],
+#                         }
+#                     ],
+#     }
+#     response = requests.post(url, headers=headers, json=data)
+#     #print(response.json())
+#     if response.status_code == 200:
+#     #suggestions = response.json().get("choices", [])[0].get("text", "")
+#         suggestions = response.json().get("choices", [])[0].get("message", {}).get("content", "")
+#         #print("Suggestions:\n", suggestions)
+#     else:
+#         print("Error:", response.text)
+#     return response.json()['choices'][0]['message']['content']
 
 def query_llm(prompt):
     headers = {
@@ -220,8 +220,8 @@ if __name__ == "__main__":
     image_path = chart_files[1]
 
     # Getting the base64 string
-    base64_image = encode_image(image_path)
-    image_data=query_image_llm(base64_image)
+    #base64_image = encode_image(image_path)
+    #image_data=query_image_llm(base64_image)
     
     print("Generating story...")
     generate_story(analysis,  chart_files,anomalies,image_data)
