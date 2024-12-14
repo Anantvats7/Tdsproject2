@@ -110,11 +110,7 @@ def encode_image(image_path):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')
 
-# Path to your image
-image_path = "chart_boxplot.png"
 
-# Getting the base64 string
-base64_image = encode_image(image_path)
 
 def query_image_llm(base64_image):
     headers = {
@@ -148,7 +144,7 @@ def query_image_llm(base64_image):
     if response.status_code == 200:
     #suggestions = response.json().get("choices", [])[0].get("text", "")
         suggestions = response.json().get("choices", [])[0].get("message", {}).get("content", "")
-        print("Suggestions:\n", suggestions)
+        #print("Suggestions:\n", suggestions)
     else:
         print("Error:", response.text)
     return response.json()['choices'][0]['message']['content']
@@ -219,6 +215,12 @@ if __name__ == "__main__":
     anomalies = detect_anomalies(data)
 
     chart_files = visualize_data(data)
+
+    # Path to your image
+    image_path = chart_files[1]
+
+    # Getting the base64 string
+    base64_image = encode_image(image_path)
     image_data=query_image_llm(base64_image)
     
     print("Generating story...")
