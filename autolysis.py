@@ -128,13 +128,13 @@ def encode_image(image_path):
 
 
 def query_image_llm(base64_image):
+    '''return text from image"'
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
         }
     data = {
         "model": "gpt-4o-mini",
-       # "messages": [{"role": "user", "content": prompt}]
         "messages":[
                         {
                         "role": "user",
