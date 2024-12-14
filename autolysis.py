@@ -106,8 +106,8 @@ def visualize_data(data, output_prefix="chart"):
     plt.close()
 
     # Histogram with KDE
-    for col in num_df.columns:
-            plt.figure(figsize=(10, 6))
+    for col in num_df.columns[:2]:  # Limit to first 2 columns for visualization
+            plt.figure(figsize=(5, 5))
             sns.histplot(num_df[col], kde=True, color='blue')
             plt.title(f"Histogram for {col}", fontsize=14)
             plt.xlabel(col, fontsize=12)
@@ -115,6 +115,7 @@ def visualize_data(data, output_prefix="chart"):
             filename_histogram = f"{output_prefix}_histogram_{col}.png"
             plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
             plt.close()
+            chart_files.append(filename_histogram)
 
     return filename_corr, filename_boxplot, filename_histogram
 
