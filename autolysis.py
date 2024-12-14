@@ -83,6 +83,8 @@ def detect_anomalies(data):
 
 def visualize_data(data, output_prefix="chart"):
     """Generate visualizations for data analysis."""
+    
+     # Correlation Heatmap
     plt.figure(figsize=(5, 5))
     num_df = data.select_dtypes(include=['number'])
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
@@ -93,6 +95,7 @@ def visualize_data(data, output_prefix="chart"):
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
 
+    # Box Plot
     plt.figure(figsize=(5, 5))
     sns.boxplot(data=num_df)
     plt.title("Box Plot for Outlier Detection")
@@ -102,14 +105,16 @@ def visualize_data(data, output_prefix="chart"):
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
 
-    plt.figure(figsize=(5, 5))
-    sns.histplot(num_df.iloc[:, 0], kde=True)
-    plt.title("Histogram with KDE")
-    plt.xlabel(col, fontsize=12)
-    plt.ylabel("Frequency", fontsize=12)
-    filename_histogram = f"{output_prefix}_histogram.png"
-    plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
-    plt.close()
+    # Histogram with KDE
+    for col in num_df.columns:
+            plt.figure(figsize=(10, 6))
+            sns.histplot(num_df[col], kde=True, color='blue')
+            plt.title(f"Histogram for {col}", fontsize=14)
+            plt.xlabel(col, fontsize=12)
+            plt.ylabel("Frequency", fontsize=12)
+            filename_histogram = f"{output_prefix}_histogram_{col}.png"
+            plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
+            plt.close()
 
     return filename_corr, filename_boxplot, filename_histogram
 
