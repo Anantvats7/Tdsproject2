@@ -159,7 +159,7 @@ def query_image_llm(base64_image):
         if response.status_code == 200:
             suggestions = response.json().get("choices", [])[0].get("message", {}).get("content", "")
         else:
-        return None
+            return None
     except requests.exceptions.Timeout:
         return None
     except requests.exceptions.RequestException as e:
