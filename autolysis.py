@@ -40,43 +40,45 @@ def load_data(filename):
         print(f"Error loading file: {e}")
         sys.exit(1)
 
-def detect_outliers(data):
-    """Detect outliers using the IQR method."""
-    outliers = {}
-    for column in data.select_dtypes(include=[np.number]).columns:
-        Q1 = data[column].quantile(0.25)
-        Q3 = data[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
-    return outliers
-
 def analyze_data(data):
-    """Perform basic data analysis."""
+    """Perform basic and enhanced data analysis with statistical insights."""
     numeric_df = data.select_dtypes(include=['number'])
     analysis = {
         "shape": data.shape,
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
-        'correlation': numeric_df.corr().to_dict(), 
+        'correlation': numeric_df.corr().to_dict(),
+        "skewness": numeric_df.skew().to_dict(),
+        "kurtosis": numeric_df.kurt().to_dict(),
     }
-    analysis["outliers"] = detect_outliers(data)
+    num_columns = data.select_dtypes(include=[np.number]).columns
+    outliers = {}
+    for column in num_columns:
+        Q1 = data[column].quantile(0.25)
+        Q3 = data[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
+    
+    analysis["outliers"] = outliers
     return analysis
     
 
-
+# Outlier detection using Isolation Forest
 def detect_anomalies(data):
-    """Apply Isolation Forest for anomaly detection."""
-    numeric_data = data.select_dtypes(include=[np.number])
-    if numeric_data.empty:
-        return None, None
-
-    iso_forest = IsolationForest(contamination=0.05)
-    anomalies = iso_forest.fit_predict(numeric_data)
-    anomalies_score=iso_forest.decision_function(numeric_data)
-    return anomalies,anomalies_score
+    """Detect outliers in numeric columns using Isolation Forest."""
+    numeric_df = data.select_dtypes(include=['number'])
+    if numeric_df.empty:
+        logging.warning("No numeric data available for outlier detection.")
+        return {}
+    
+    clf = IsolationForest(contamination=0.05, random_state=42)
+    clf.fit(numeric_df)
+    outliers = clf.predict(numeric_df)
+    outlier_counts = {col: sum(outliers == -1) for col in numeric_df.columns}
+    return outlier_counts
 
 
 def visualize_data(data, output_prefix="chart"):
@@ -85,6 +87,8 @@ def visualize_data(data, output_prefix="chart"):
     num_df = data.select_dtypes(include=['number'])
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
     plt.title("Correlation Matrix")
+    plt.xlabel("Features", fontsize=12)
+    plt.ylabel("Features", fontsize=12)
     filename_corr = f"{output_prefix}_correlation_matrix.png"
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
@@ -92,6 +96,8 @@ def visualize_data(data, output_prefix="chart"):
     plt.figure(figsize=(5, 5))
     sns.boxplot(data=num_df)
     plt.title("Box Plot for Outlier Detection")
+    plt.xticks(rotation=45, fontsize=10)
+    plt.ylabel("Values", fontsize=12)
     filename_boxplot = f"{output_prefix}_boxplot.png"
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
@@ -99,16 +105,18 @@ def visualize_data(data, output_prefix="chart"):
     plt.figure(figsize=(5, 5))
     sns.histplot(num_df.iloc[:, 0], kde=True)
     plt.title("Histogram with KDE")
+    plt.xlabel(col, fontsize=12)
+    plt.ylabel("Frequency", fontsize=12)
     filename_histogram = f"{output_prefix}_histogram.png"
     plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
     plt.close()
 
     return filename_corr, filename_boxplot, filename_histogram
 
-# Function to encode the image
-def encode_image(image_path):
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')
+# # Function to encode the image
+# def encode_image(image_path):
+#   with open(image_path, "rb") as image_file:
+#     return base64.b64encode(image_file.read()).decode('utf-8')
 
 
 #vision is taking to much time
@@ -186,7 +194,7 @@ def generate_story(analysis, chart_filenames,anomalies):
     
     f"**Visulation text** {chart_filenames}\n\n"
 
-    f"**anomalies** {anomalies}\n\n"
+    f"**Anomalies count** {anomalies}\n\n"
     
     "In your analysis, please focus on the following:\n"
     "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
