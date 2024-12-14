@@ -128,7 +128,7 @@ def encode_image(image_path):
 
 
 def query_image_llm(base64_image):
-    '''return text from image"'
+    '''return text from image'''
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
