@@ -187,13 +187,18 @@ def generate_story(analysis: dict, chart_files: list, anomalies: dict, results: 
         f"- General Analysis: {analysis}\n"
         f"- Anomalies: {anomalies}\n"
         f"- Cramér's V Results: {results}\n\n"
+        f"- Visualizations :{chart_files}\n\n"
         "Provide a detailed narrative including trends, anomalies, correlations, and recommendations.\n"
         "Ensure the narrative is structured into sections for readability: \n"
+        "### Data description \n"
         "### Trends \n"
         "### Anomalies \n"
         "### Correlations \n"
         "### Recommendations \n"
-        "Use Markdown formatting for emphasis and integrate the visualizations meaningfully."
+        "### Insights \n"
+        "### Implications \n"
+        "### Conclusion \n"
+        "Use Markdown formatting for emphasis."
     )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
