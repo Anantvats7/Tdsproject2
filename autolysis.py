@@ -97,18 +97,35 @@ def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
 
     # Correlation Heatmap
     plt.figure(figsize=(10, 10))
-    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
+    sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm", cbar_kws={'label': 'Correlation Coefficient'})
     plt.title("Correlation Matrix")
+    plt.xlabel("Features")
+    plt.ylabel("Features")
     filename_corr = f"{output_prefix}_correlation_matrix.png"
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
     chart_files.append(filename_corr)
 
+
     # Box Plot
     plt.figure(figsize=(10, 6))
     sns.boxplot(data=num_df)
     plt.title("Box Plot for Outlier Detection")
+    plt.xlabel("Features")
+    plt.ylabel("Values")
     plt.xticks(rotation=45)
+
+    # Adding annotations for outliers
+    for i, column in enumerate(num_df.columns):
+        Q1 = num_df[column].quantile(0.25)
+        Q3 = num_df[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outliers = num_df[(num_df[column] < lower_bound) | (num_df[column] > upper_bound)]
+        for outlier_idx in outliers.index:
+            plt.text(i, num_df.loc[outlier_idx, column], f"{outlier_idx}", fontsize=8, color="red")
+
     filename_boxplot = f"{output_prefix}_boxplot.png"
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
@@ -117,7 +134,7 @@ def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
     # Histograms with KDE
     for col in num_df.columns[:2]:
         plt.figure(figsize=(8, 6))
-        sns.histplot(num_df[col], kde=True, color='blue')
+        sns.histplot(num_df[col], kde=True, color='blue', label=f"KDE and Histogram for {col}")
         plt.title(f"Histogram for {col}")
         filename_histogram = f"{output_prefix}_histogram_{col}.png"
         plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
@@ -170,7 +187,13 @@ def generate_story(analysis: dict, chart_files: list, anomalies: dict, results: 
         f"- General Analysis: {analysis}\n"
         f"- Anomalies: {anomalies}\n"
         f"- Cramér's V Results: {results}\n\n"
-        "Provide a detailed narrative including trends, anomalies, correlations, and recommendations."
+        "Provide a detailed narrative including trends, anomalies, correlations, and recommendations.\n"
+        "Ensure the narrative is structured into sections for readability: \n"
+        "### Trends \n"
+        "### Anomalies \n"
+        "### Correlations \n"
+        "### Recommendations \n"
+        "Use Markdown formatting for emphasis and integrate the visualizations meaningfully."
     )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
