@@ -74,21 +74,6 @@ def analyze_data(data):
         analysis['pca_variance_ratio'] = pca.explained_variance_ratio_.tolist()
     return analysis
     
-def feature_importance(data):
-    """Calculate feature importance using Random Forest (if applicable)."""
-    label_encoders = {}
-    for column in data.select_dtypes(include=['object']).columns:
-        le = LabelEncoder()
-        data[column] = le.fit_transform(data[column].astype(str))
-        label_encoders[column] = le
-
-    if 'target' in data.columns:
-        y = data['target']
-        X = data.drop('target', axis=1)
-        clf = RandomForestClassifier(random_state=42)
-        clf.fit(X.fillna(0), y)
-        return dict(zip(X.columns, clf.feature_importances_))
-    return {}
 
 # Outlier detection using Isolation Forest
 def detect_anomalies(data):
@@ -188,6 +173,7 @@ def calculate_cramers_v_for_all(data):
     return cramers_v_results
 
 def query_llm(prompt):
+    '''query llm based on prompt given '''
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
@@ -208,7 +194,8 @@ def query_llm(prompt):
     except (KeyError, IndexError):
         return "Unexpected response structure received from the server."
 
-def generate_story(analysis, chart_filenames,anomalies,feature_importance,results):
+def generate_story(analysis, chart_filenames,anomalies,results):
+    '''make prompt and write in the file '''
     prompt = "Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
     
     # Add missing values information if any are detected
@@ -218,9 +205,7 @@ def generate_story(analysis, chart_filenames,anomalies,feature_importance,result
     # Add anomalies information if any are detected
     if anomalies:
         prompt += f"**Anomalies detected in**: {anomalies}\n"
-    # Add feature importance information if there are any
-    if feature_importance:
-        prompt += f"**Feature_importance in the dataset is**: {feature_importance,}\n"
+    
     prompt += (
     f"**Column Names & Types:** {analysis['columns']}\n\n"
     
@@ -231,16 +216,16 @@ def generate_story(analysis, chart_filenames,anomalies,feature_importance,result
     
     f"**Correlation Analysis Results:** {analysis['correlation']}\n\n"
     
-    f"**Visulation text** {chart_filenames}\n\n"
+    f"**Visulation ** {chart_filenames}\n\n"
 
-    f"**Anomalies count** {anomalies}\n\n"
+    f"**Correlation of categorical feature** {results}\n\n"
     
     "In your analysis, please focus on the following:\n"
     "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
     "- Discuss any **outliers** or **anomalies** that stand out, especially those that might need further investigation."
     "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
-    "- Highlight any **correlations** that might provide actionable insights, especially with respect to the success or failure of the campaign.\n"
-    "-Provide **insights gained ** and **implications**"
+    "- Highlight any **correlations** that might provide actionable insights .\n"
+    "-Provide **insights gained ** and **implications** based on the statistical analysis"
     "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover. and provide **conclusion**"
     )
     story = query_llm(prompt)
@@ -263,11 +248,10 @@ if __name__ == "__main__":
 
     chart_files = visualize_data(data)
 
-    feature_importance=feature_importance(data)    
     # Calculate Cramér's V for all categorical pairs
     results = calculate_cramers_v_for_all(data)
     
     print("Generating story...")
-    generate_story(analysis,  chart_files,anomalies,feature_importance,results)
+    generate_story(analysis,  chart_files,anomalies,results)
 
     print("README.md and charts generated successfully.")
