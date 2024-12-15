@@ -84,7 +84,8 @@ def detect_anomalies(data):
 def visualize_data(data, output_prefix="chart"):
     """Generate visualizations for data analysis."""
     chart_files = []
-     # Correlation Heatmap
+    
+    # Correlation Heatmap
     plt.figure(figsize=(5, 5))
     num_df = data.select_dtypes(include=['number'])
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
