@@ -108,7 +108,7 @@ def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
 
 
     # Histograms with KDE
-    for col in num_df.columns[:2]:
+    for col in num_df.columns[:1]:
         plt.figure(figsize=(8, 6))
         sns.histplot(num_df[col], kde=True, color='blue', label=f"KDE and Histogram for {col}")
         plt.title(f"Histogram for {col}")
@@ -116,6 +116,13 @@ def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
         plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
         plt.close()
         chart_files.append(filename_histogram)
+
+    #Pairplot
+    sns.pairplot(num_df[num_df.columns[:1]])  # Adjust the number of columns as needed
+    plt.suptitle("Pairplot", fontsize=16)  # Set title using suptitle, which is better for figure-level plots
+    plt.savefig(f"{output_prefix}_pairplot.png", dpi=100, bbox_inches="tight")
+    plt.close()
+    chart_files.append(f"{output_prefix}_pairplot.png")
 
     return chart_files
 
