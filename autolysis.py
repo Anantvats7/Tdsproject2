@@ -21,7 +21,6 @@ matplotlib.use('Agg')  # Switch to a non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import requests
 import base64
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
@@ -220,7 +219,7 @@ def generate_story(analysis, chart_filenames,anomalies,feature_importance,result
     if anomalies:
         prompt += f"**Anomalies detected in**: {anomalies}\n"
     # Add feature importance information if there are any
-    if feature_importance,:
+    if feature_importance:
         prompt += f"**Feature_importance in the dataset is**: {feature_importance,}\n"
     prompt += (
     f"**Column Names & Types:** {analysis['columns']}\n\n"
@@ -241,7 +240,7 @@ def generate_story(analysis, chart_filenames,anomalies,feature_importance,result
     "- Discuss any **outliers** or **anomalies** that stand out, especially those that might need further investigation."
     "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
     "- Highlight any **correlations** that might provide actionable insights, especially with respect to the success or failure of the campaign.\n"
-    "-Provide **insights gained ** and **implications**
+    "-Provide **insights gained ** and **implications**"
     "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover. and provide **conclusion**"
     )
     story = query_llm(prompt)
