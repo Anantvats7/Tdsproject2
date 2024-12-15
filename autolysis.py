@@ -196,36 +196,14 @@ def query_llm(prompt):
 
 def generate_story(analysis, chart_filenames,anomalies,results):
     '''make prompt and write in the file '''
-    prompt = "Based on the following analysis results, provide a comprehensive and detailed narrative:\n\n"
-    
-    # Add missing values information if any are detected
-    if analysis['missing_values']:
-        prompt += f"**Missing values detected in**: {analysis['missing_values']}\n"
-    
-    # Add anomalies information if any are detected
-    if anomalies:
-        prompt += f"**Anomalies detected in**: {anomalies}\n"
-    
-    prompt += (
-    f"**Column Names & Types:** {analysis['columns']}\n\n"
-    
-    f"**Summary Statistics:** {analysis['summary_statistics']}\n\n"
-    
-    
-    f"**Outliers and Anomalies:** {analysis['outliers']}\n\n"
-    
-    f"**Correlation Analysis Results:** {analysis['correlation']}\n\n"
-    
-    f"**Visulation ** {chart_filenames}\n\n"
-
-    f"**Correlation of categorical feature** {results}\n\n"
-    
+    prompt = (
+        "Based on the following analysis results {analysis} ,{results} and{anomalies}, provide a comprehensive and detailed narrative:\n\n"
+     
     "In your analysis, please focus on the following:\n"
     "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
     "- Discuss any **outliers** or **anomalies** that stand out, especially those that might need further investigation."
     "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
     "- Highlight any **correlations** that might provide actionable insights .\n"
-    "-Provide **insights gained ** and **implications** based on the statistical analysis"
     "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover. and provide **conclusion**"
     )
     story = query_llm(prompt)
