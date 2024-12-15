@@ -12,85 +12,81 @@
 # ]
 # ///
 
+
 import os
 import sys
 import httpx
 import seaborn as sns
 import matplotlib
-matplotlib.use('Agg')  # Switch to a non-interactive backend
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import base64
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
 from scipy.stats import chi2_contingency
 
-url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+# Constants
+URL = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 AIPROXY_TOKEN = os.environ.get("AIPROXY_TOKEN")
 
-def load_data(filename):
+# Utility Functions
+def load_data(filename: str) -> pd.DataFrame:
     """Load CSV data from a file."""
     try:
-        data = pd.read_csv(filename, encoding='ISO-8859-1')
-        return data
+        return pd.read_csv(filename, encoding='ISO-8859-1')
     except UnicodeDecodeError:
-        print("Error loading file: Unable to decode the file with 'ISO-8859-1'.")
+        print("Error: Unable to decode file with 'ISO-8859-1'.")
         sys.exit(1)
     except Exception as e:
         print(f"Error loading file: {e}")
         sys.exit(1)
 
-def analyze_data(data):
-    """Perform basic and enhanced data analysis with statistical insights."""
+def analyze_data(data: pd.DataFrame) -> dict:
+    """Perform basic and enhanced data analysis."""
     numeric_df = data.select_dtypes(include=['number'])
     analysis = {
         "shape": data.shape,
         "columns": data.dtypes.to_dict(),
         "missing_values": data.isnull().sum().to_dict(),
         "summary_statistics": data.describe().to_dict(),
-        'correlation': numeric_df.corr().to_dict(),
+        "correlation": numeric_df.corr().to_dict(),
         "skewness": numeric_df.skew().to_dict(),
         "kurtosis": numeric_df.kurt().to_dict(),
     }
-    num_columns = data.select_dtypes(include=[np.number]).columns
+
+    # Outlier detection using IQR
     outliers = {}
-    for column in num_columns:
+    for column in numeric_df.columns:
         Q1 = data[column].quantile(0.25)
         Q3 = data[column].quantile(0.75)
         IQR = Q3 - Q1
         lower_bound = Q1 - 1.5 * IQR
         upper_bound = Q3 + 1.5 * IQR
         outliers[column] = data[(data[column] < lower_bound) | (data[column] > upper_bound)].shape[0]
-    
     analysis["outliers"] = outliers
 
-    # PCA for Dimensionality Reduction
-    if numeric_df.shape[1] > 1:  # Ensure enough columns for PCA
+    # PCA for dimensionality reduction
+    if numeric_df.shape[1] > 1:
         pca = PCA(n_components=min(2, numeric_df.shape[1]))
         pca_result = pca.fit_transform(numeric_df.fillna(0))
         analysis['pca_variance_ratio'] = pca.explained_variance_ratio_.tolist()
-    return analysis
-    
 
-# Outlier detection using Isolation Forest
-def detect_anomalies(data):
-    """Detect outliers in numeric columns using Isolation Forest."""
+    return analysis
+
+def detect_anomalies(data: pd.DataFrame) -> dict:
+    """Detect outliers using Isolation Forest."""
     numeric_df = data.select_dtypes(include=['number'])
     if numeric_df.empty:
-        logging.warning("No numeric data available for outlier detection.")
+        print("Warning: No numeric data for anomaly detection.")
         return {}
-    
+
     clf = IsolationForest(contamination=0.05, random_state=42)
     clf.fit(numeric_df)
     outliers = clf.predict(numeric_df)
-    outlier_counts = {col: sum(outliers == -1) for col in numeric_df.columns}
-    return outlier_counts
+    return {col: (outliers == -1).sum() for col in numeric_df.columns}
 
-
-def visualize_data(data, output_prefix="chart"):
+def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
     """Generate visualizations for data analysis."""
     chart_files = []
     num_df = data.select_dtypes(include=['number'])
@@ -98,82 +94,60 @@ def visualize_data(data, output_prefix="chart"):
     if num_df.empty:
         print("No numeric columns available for visualization.")
         return chart_files
-    
+
     # Correlation Heatmap
     plt.figure(figsize=(10, 10))
     sns.heatmap(num_df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
     plt.title("Correlation Matrix")
-    plt.xlabel("Features", fontsize=12)
-    plt.ylabel("Features", fontsize=12)
     filename_corr = f"{output_prefix}_correlation_matrix.png"
     plt.savefig(filename_corr, dpi=100, bbox_inches="tight")
     plt.close()
     chart_files.append(filename_corr)
 
     # Box Plot
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(10, 6))
     sns.boxplot(data=num_df)
     plt.title("Box Plot for Outlier Detection")
-    plt.xticks(rotation=45, fontsize=10)
-    plt.ylabel("Values", fontsize=12)
+    plt.xticks(rotation=45)
     filename_boxplot = f"{output_prefix}_boxplot.png"
     plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
     plt.close()
     chart_files.append(filename_boxplot)
 
-    # Histogram with KDE
-    for col in num_df.columns[:2]:  # Limit to first 2 columns for visualization
-            plt.figure(figsize=(10, 8))
-            sns.histplot(num_df[col], kde=True, color='blue')
-            plt.title(f"Histogram for {col}", fontsize=14)
-            plt.xlabel(col, fontsize=12)
-            plt.ylabel("Frequency", fontsize=12)
-            filename_histogram = f"{output_prefix}_histogram_{col}.png"
-            plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
-            plt.close()
-            chart_files.append(filename_histogram)
-        
-    # Scatter Plot
-    cols_to_plot = num_df.columns[:3]  # Select the first 3 columns
-    for i, col1 in enumerate(num_df.columns):
-        for col2 in num_df.columns[i+1:]:
-            plt.figure(figsize=(6, 6))
-            plt.scatter(num_df[col1], num_df[col2], alpha=0.5, c=np.random.rand(len(num_df)), cmap='viridis')
-            plt.title(f"Scatter Plot: {col1} vs {col2}")
-            plt.xlabel(col1)
-            plt.ylabel(col2)
-            filename_scatter = f"{output_prefix}_scatter_{col1}_vs_{col2}.png"
-            plt.savefig(filename_scatter, dpi=100, bbox_inches="tight")
-            plt.close()
-            chart_files.append((f"Scatter Plot: {col1} vs {col2}", filename_scatter))
+    # Histograms with KDE
+    for col in num_df.columns[:2]:
+        plt.figure(figsize=(8, 6))
+        sns.histplot(num_df[col], kde=True, color='blue')
+        plt.title(f"Histogram for {col}")
+        filename_histogram = f"{output_prefix}_histogram_{col}.png"
+        plt.savefig(filename_histogram, dpi=100, bbox_inches="tight")
+        plt.close()
+        chart_files.append(filename_histogram)
 
     return chart_files
 
-def cramers_v(confusion_matrix):
-    """Calculate Cramér's V statistic for categorical variables."""
-    chi2, p, dof, expected = chi2_contingency(confusion_matrix)
-    n = confusion_matrix.sum().sum()
+def cramers_v(confusion_matrix: np.ndarray) -> float:
+    """Calculate Cramér's V statistic."""
+    chi2, _, _, _ = chi2_contingency(confusion_matrix)
+    n = confusion_matrix.sum()
     return np.sqrt(chi2 / (n * (min(confusion_matrix.shape) - 1)))
 
-def calculate_cramers_v(data, col1, col2):
-    """Calculate Cramér's V for a pair of categorical columns."""
+def calculate_cramers_v(data: pd.DataFrame, col1: str, col2: str) -> float:
+    """Calculate Cramér's V for two categorical columns."""
     contingency_table = pd.crosstab(data[col1], data[col2])
-    return cramers_v(contingency_table)
+    return cramers_v(contingency_table.to_numpy())
 
-# Example usage: Calculate Cramér's V for all pairs of categorical columns
-def calculate_cramers_v_for_all(data):
+def calculate_cramers_v_for_all(data: pd.DataFrame) -> dict:
+    """Calculate Cramér's V for all pairs of categorical columns."""
     categorical_cols = data.select_dtypes(include=['object']).columns
-    cramers_v_results = {}
-
-    # Loop through all pairs of categorical columns
+    results = {}
     for i, col1 in enumerate(categorical_cols):
         for col2 in categorical_cols[i+1:]:
-            cramers_v_results[(col1, col2)] = calculate_cramers_v(data, col1, col2)
+            results[(col1, col2)] = calculate_cramers_v(data, col1, col2)
+    return results
 
-    return cramers_v_results
-
-def query_llm(prompt):
-    '''query llm based on prompt given '''
+def query_llm(prompt: str) -> str:
+    """Query the LLM with a given prompt."""
     headers = {
         'Authorization': f'Bearer {AIPROXY_TOKEN}',
         'Content-Type': 'application/json'
@@ -183,33 +157,25 @@ def query_llm(prompt):
         "messages": [{"role": "user", "content": prompt}]
     }
     try:
-        response = httpx.post(url, headers=headers, json=data, timeout=30)  # Increased timeout
+        response = httpx.post(URL, headers=headers, json=data, timeout=30)
         response.raise_for_status()
-        content = response.json().get("choices", [])[0].get("message", {}).get("content", "")
-        return content if content else "No content received from the model."
-    except httpx.TimeoutException as e:
-        return f"Request timed out: {str(e)}"
+        return response.json().get("choices", [])[0].get("message", {}).get("content", "No content received.")
     except httpx.RequestError as e:
-        return f"Request failed: {str(e)}"
-    except (KeyError, IndexError):
-        return "Unexpected response structure received from the server."
+        return f"Request failed: {e}"
 
-def generate_story(analysis, chart_filenames,anomalies,results):
-    '''make prompt and write in the file '''
+def generate_story(analysis: dict, chart_files: list, anomalies: dict, results: dict):
+    """Generate a narrative based on the analysis results."""
     prompt = (
-        "Based on the following analysis results {analysis} ,{results} and{anomalies}, provide a comprehensive and detailed narrative:\n\n"
-     
-    "In your analysis, please focus on the following:\n"
-    "- Identify and describe any **trends** or **patterns** within the dataset. What variables have the strongest relationships with each other?"
-    "- Discuss any **outliers** or **anomalies** that stand out, especially those that might need further investigation."
-    "- Analyze the **missing values** and suggest possible imputation strategies or next steps for handling missing data."
-    "- Highlight any **correlations** that might provide actionable insights .\n"
-    "- Finally, propose potential **recommendations** for improving the dataset strategy based on the insights you uncover. and provide **conclusion**"
+        f"Based on the following analysis results:\n\n"
+        f"- General Analysis: {analysis}\n"
+        f"- Anomalies: {anomalies}\n"
+        f"- Cramér's V Results: {results}\n\n"
+        "Provide a detailed narrative including trends, anomalies, correlations, and recommendations."
     )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
         f.write(story)
-        for chart in chart_filenames:
+        for chart in chart_files:
             f.write(f"\n![Chart]({chart})\n")
 
 if __name__ == "__main__":
@@ -219,17 +185,15 @@ if __name__ == "__main__":
 
     filename = sys.argv[1]
     data = load_data(filename)
-    analysis = analyze_data(data)
-    
+
     print("Running analysis...")
+    analysis = analyze_data(data)
     anomalies = detect_anomalies(data)
-
     chart_files = visualize_data(data)
-
-    # Calculate Cramér's V for all categorical pairs
     results = calculate_cramers_v_for_all(data)
-    
+
     print("Generating story...")
-    generate_story(analysis,  chart_files,anomalies,results)
+    generate_story(analysis, chart_files, anomalies, results)
 
     print("README.md and charts generated successfully.")
+
