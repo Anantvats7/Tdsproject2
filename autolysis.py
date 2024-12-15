@@ -107,30 +107,6 @@ def visualize_data(data: pd.DataFrame, output_prefix: str = "chart") -> list:
     chart_files.append(filename_corr)
 
 
-    # Box Plot
-    plt.figure(figsize=(10, 6))
-    sns.boxplot(data=num_df)
-    plt.title("Box Plot for Outlier Detection")
-    plt.xlabel("Features")
-    plt.ylabel("Values")
-    plt.xticks(rotation=45)
-
-    # Adding annotations for outliers
-    for i, column in enumerate(num_df.columns):
-        Q1 = num_df[column].quantile(0.25)
-        Q3 = num_df[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        outliers = num_df[(num_df[column] < lower_bound) | (num_df[column] > upper_bound)]
-        for outlier_idx in outliers.index:
-            plt.text(i, num_df.loc[outlier_idx, column], f"{outlier_idx}", fontsize=8, color="red")
-
-    filename_boxplot = f"{output_prefix}_boxplot.png"
-    plt.savefig(filename_boxplot, dpi=100, bbox_inches="tight")
-    plt.close()
-    chart_files.append(filename_boxplot)
-
     # Histograms with KDE
     for col in num_df.columns[:2]:
         plt.figure(figsize=(8, 6))
