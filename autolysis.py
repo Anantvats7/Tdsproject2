@@ -146,6 +146,7 @@ def calculate_cramers_v_for_all(data: pd.DataFrame) -> dict:
             results[(col1, col2)] = calculate_cramers_v(data, col1, col2)
     return results
 
+
 def query_llm(prompt: str) -> str:
     """Query the LLM with a given prompt."""
     headers = {
@@ -158,10 +159,17 @@ def query_llm(prompt: str) -> str:
     }
     try:
         response = httpx.post(URL, headers=headers, json=data, timeout=30)
-        response.raise_for_status()
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
         return response.json().get("choices", [])[0].get("message", {}).get("content", "No content received.")
     except httpx.RequestError as e:
         return f"Request failed: {e}"
+    except httpx.HTTPStatusError as e:
+        error_details = response.json() if response.headers.get("Content-Type") == "application/json" else response.text
+        return (
+            f"HTTP error occurred: {e.response.status_code} - {e.response.reason_phrase}\n"
+            f"Details: {error_details}"
+        )
+
 
 def generate_story(analysis: dict, chart_files: list, anomalies: dict, results: dict):
     """Generate a narrative based on the analysis results."""
