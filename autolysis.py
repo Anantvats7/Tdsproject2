@@ -188,7 +188,8 @@ def generate_story(analysis: dict, chart_files: list, anomalies: dict, results: 
         "### Insights \n"
         "### Implications \n"
         "### Conclusion \n"
-        "Use Markdown formatting for emphasis."
+        "Use Markdown formatting for emphasis and integrate the visualizations meaningfully.\n"
+        "Highlight any significant findings or trends using **bold formatting** or headers."
     )
     story = query_llm(prompt)
     with open("README.md", "w") as f:
